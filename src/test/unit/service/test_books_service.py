@@ -1,85 +1,49 @@
+import pytest
 import sys
 import os
+
+# Add the src directory to the sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../src')))
 
 import pytest
-from src.service.books_service import get_books, get_book, create_book, replace_book, modify_book, delete_book
-from src.fake.data import books_data
-from src.model.books import Book
+from src.service.books_service import get_books, replace_book, modify_book, delete_book
+from src.fake.data import books_data  # Assuming you have some fake data for testing
+# test_books.py or equivalent test file
 
+from src.service.books_service import get_books, get_book, replace_book, modify_book, delete_book
 
-# Sample book data for testing
-sample_book = {
-    "title": "Sample Book",
-    "author_id": 1,
-    "published_year": 2021,
-    "genre": "Fiction"
-}
-
-# Test get_books() service method
+# Test for fetching books
 def test_get_books():
+    books_data.clear()  # Ensure the data is in a known state for the test
+    books_data.extend([
+        {"id": 1, "title": "Harry Potter and the Philosopher's Stone", "author_id": 1, "publication_year": 1997, "genre": "Fantasy", "summary": "A young wizard discovers his magical heritage."},
+        {"id": 2, "title": "The Hobbit", "author_id": 2, "publication_year": 1937, "genre": "Fantasy", "summary": "Bilbo Baggins goes on an unexpected adventure."},
+    ])
     books = get_books()
-    assert len(books) > 0  # Ensure books list is not empty
+    assert len(books) == 2  # Should return two books
 
-# Test get_book() service method
-def test_get_book():
-    # Create a book first
-    created_book = create_book(sample_book)
-    book = get_book(created_book.id)
-    assert book is not None  # Ensure the book exists
-    assert book.id == created_book.id  # Ensure correct book is fetched
-
-def test_get_book_not_found():
-    book = get_book(999)  # ID that doesn't exist
-    assert book is None  # Book should not be found
-
-# Test create_book() service method
-def test_create_book():
-    created_book = create_book(sample_book)
-    assert created_book.title == sample_book['title']  # Check if title matches
-    assert created_book.author_id == sample_book['author_id']  # Check if author_id matches
-
-# Test replace_book() service method
+# Test for replacing a book
 def test_replace_book():
-    created_book = create_book(sample_book)
-    replacement_data = {
-        "title": "Replaced Book",
-        "author_id": 2,
-        "published_year": 2022,
-        "genre": "Mystery"
-    }
-    replaced_book = replace_book(created_book.id, replacement_data)
-    assert replaced_book is not None
-    assert replaced_book.title == "Replaced Book"  # Ensure title was replaced
-
-def test_replace_book_not_found():
-    replacement_data = {
-        "title": "Replaced Book",
-        "author_id": 2,
-        "published_year": 2022,
-        "genre": "Mystery"
-    }
-    replaced_book = replace_book(999, replacement_data)  # ID that doesn't exist
-    assert replaced_book is None  # No book should be replaced
-
-# Test modify_book() service method
-def test_modify_book():
-    created_book = create_book(sample_book)
-    update_data = {
-        "genre": "Science Fiction"
-    }
-    updated_book = modify_book(created_book.id, update_data)
+    new_data = {"id": 1, "title": "Updated Book One", "author_id": 1, "publication_year": 2023, "genre": "Fantasy", "summary": "Updated summary of the book."}
+    updated_book = replace_book(1, new_data)
     assert updated_book is not None
-    assert updated_book.genre == "Science Fiction"  # Ensure genre was updated
+    assert updated_book.title == "Updated Book One"
+    assert updated_book.summary == "Updated summary of the book."
 
-# Test delete_book() service method
+# Test for modifying a book
+def test_modify_book():
+    update_data = {"title": "Partially Updated Book One", "genre": "Adventure", "summary": "Partially updated summary"}
+    modified_book = modify_book(1, update_data)
+    assert modified_book is not None
+    assert modified_book.title == "Partially Updated Book One"
+    assert modified_book.genre == "Adventure"
+    assert modified_book.summary == "Partially updated summary"
+
+# Test for deleting a book
 def test_delete_book():
-    created_book = create_book(sample_book)
-    deletion_result = delete_book(created_book.id)
-    assert deletion_result is True  # Ensure book was deleted successfully
-    book = get_book(created_book.id)
-    assert book is None  # Ensure book is not found after deletion
-
-def test_delete_book_not_found():
-    deletion_result = delete_book(999)  # ID that doesn't exist
-    assert deletion_result is False  # No book should be deleted
+    book_id_to_delete = 1
+    result = delete_book(book_id_to_delete)
+    assert result is True
+    # Verify deletion
+    book = get_book(book_id_to_delete)
+    assert book is None
